@@ -3,536 +3,370 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parkur Oyunu — Proje Günlüğü</title>
+  <title>Ball Runner — Proje Günlüğü | Muhammed Aziz Kılıç</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg:        #0a0a0a;
-      --surface:   #111111;
-      --border:    #1e1e1e;
-      --accent:    #d4f700;
-      --accent2:   #ff4e00;
-      --text:      #e8e8e8;
-      --muted:     #555;
-      --card:      #131313;
+      --bg:      #080808;
+      --surface: #101010;
+      --border:  #1c1c1c;
+      --accent:  #c8f400;
+      --accent2: #ff4b00;
+      --text:    #e6e6e6;
+      --muted:   #484848;
+      --card:    #0e0e0e;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; overflow-x: hidden; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 300;
-      overflow-x: hidden;
-    }
-
-    /* ── NOISE OVERLAY ── */
     body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      background-size: 200px 200px;
-      pointer-events: none;
-      z-index: 9999;
-      opacity: .5;
+      content:''; position:fixed; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size:200px 200px; pointer-events:none; z-index:9999; opacity:.4;
     }
 
-    /* ── HERO ── */
+    /* NAV */
+    nav {
+      position:sticky; top:0; z-index:100;
+      background:rgba(8,8,8,.92); backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+      padding:.9rem 5rem;
+      display:flex; align-items:center; justify-content:space-between; gap:2rem;
+    }
+    .nav-logo { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:.08em; color:var(--text); text-decoration:none; }
+    .nav-logo span { color:var(--accent); }
+    .nav-links { display:flex; gap:2rem; }
+    .nav-links a { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color .2s; }
+    .nav-links a:hover, .nav-links a.active { color:var(--accent); }
+    .nav-status {
+      font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.12em;
+      color:var(--accent); display:flex; align-items:center; gap:.4rem;
+    }
+    .nav-status::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 5px var(--accent); }
+
+    /* HERO */
     .hero {
-      position: relative;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 3rem 4rem 4rem;
-      overflow: hidden;
-      border-bottom: 1px solid var(--border);
+      position:relative; min-height:100vh;
+      display:flex; flex-direction:column; justify-content:flex-end;
+      padding:3rem 5rem 4.5rem; overflow:hidden;
+      border-bottom:1px solid var(--border);
     }
-
     .hero-grid {
-      position: absolute; inset: 0;
-      background-image:
-        linear-gradient(var(--border) 1px, transparent 1px),
-        linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 60px 60px;
-      opacity: .4;
+      position:absolute; inset:0;
+      background-image: linear-gradient(var(--border) 1px,transparent 1px), linear-gradient(90deg,var(--border) 1px,transparent 1px);
+      background-size:64px 64px; opacity:.35;
     }
+    .hero-run { position:absolute; inset:0; overflow:hidden; }
+    .hero-run span {
+      position:absolute; display:block;
+      background:linear-gradient(90deg,transparent,var(--accent),transparent);
+      height:1px; animation:linerun 7s linear infinite; opacity:.12;
+    }
+    .hero-run span:nth-child(1){ width:38%; top:15%; animation-delay:0s; }
+    .hero-run span:nth-child(2){ width:22%; top:36%; animation-delay:2.3s; }
+    .hero-run span:nth-child(3){ width:52%; top:61%; animation-delay:4.5s; }
+    .hero-run span:nth-child(4){ width:28%; top:80%; animation-delay:1.2s; }
+    @keyframes linerun { 0%{left:-55%} 100%{left:115%} }
 
-    .hero-lines {
-      position: absolute; inset: 0; overflow: hidden;
+    .hero-eyebrow {
+      font-family:'Space Mono',monospace; font-size:.62rem; letter-spacing:.22em;
+      color:var(--accent); text-transform:uppercase; margin-bottom:1.8rem;
+      display:flex; align-items:center; gap:.8rem; position:relative;
     }
-    .hero-lines span {
-      position: absolute;
-      display: block;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      height: 1px;
-      width: 40%;
-      animation: slide 6s linear infinite;
-      opacity: .15;
-    }
-    .hero-lines span:nth-child(1) { top: 18%; animation-delay: 0s; }
-    .hero-lines span:nth-child(2) { top: 42%; animation-delay: 2s; width: 25%; }
-    .hero-lines span:nth-child(3) { top: 67%; animation-delay: 4s; width: 55%; }
-    .hero-lines span:nth-child(4) { top: 82%; animation-delay: 1s; width: 30%; }
-
-    @keyframes slide {
-      0%   { left: -50%; }
-      100% { left: 110%; }
-    }
-
-    .hero-tag {
-      font-family: 'Space Mono', monospace;
-      font-size: .65rem;
-      letter-spacing: .2em;
-      color: var(--accent);
-      text-transform: uppercase;
-      margin-bottom: 1.5rem;
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-    }
-    .hero-tag::before {
-      content: '';
-      display: inline-block;
-      width: 24px; height: 1px;
-      background: var(--accent);
-    }
-
+    .hero-eyebrow::before { content:''; width:28px; height:1px; background:var(--accent); flex-shrink:0; }
     .hero h1 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(5rem, 14vw, 14rem);
-      line-height: .88;
-      letter-spacing: -.01em;
-      position: relative;
-      color: var(--text);
+      font-family:'Bebas Neue',sans-serif;
+      font-size:clamp(5.5rem,15vw,15rem);
+      line-height:.86; letter-spacing:-.01em; position:relative;
     }
-    .hero h1 em {
-      font-style: normal;
-      color: var(--accent);
-      display: block;
+    .hero h1 .sub { color:var(--accent); display:block; }
+    .hero-meta { margin-top:2.8rem; display:flex; flex-wrap:wrap; gap:2.5rem; position:relative; }
+    .hm { font-family:'Space Mono',monospace; font-size:.68rem; color:var(--muted); }
+    .hm strong { display:block; color:var(--text); font-size:.78rem; margin-bottom:.15rem; }
+    .scroll-hint {
+      position:absolute; right:5rem; bottom:3rem;
+      font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.2em; color:var(--muted);
+      writing-mode:vertical-rl; display:flex; align-items:center; gap:.5rem;
+    }
+    .scroll-hint::after { content:''; display:block; width:1px; height:56px; background:linear-gradient(to bottom,var(--muted),transparent); }
+
+    /* TECH STRIP */
+    .tech-strip { border-bottom:1px solid var(--border); padding:1.1rem 5rem; display:flex; align-items:center; gap:3rem; overflow-x:auto; }
+    .ts-label { font-family:'Space Mono',monospace; font-size:.58rem; color:var(--muted); letter-spacing:.2em; white-space:nowrap; }
+    .ts-items { display:flex; gap:2.2rem; }
+    .ts-item { font-family:'Bebas Neue',sans-serif; font-size:1.05rem; letter-spacing:.1em; color:#3a3a3a; white-space:nowrap; transition:color .2s; }
+    .ts-item:hover { color:var(--accent); }
+    .ts-item.on { color:#b0b0b0; }
+
+    /* SECTION HEADERS */
+    .sec-head { padding:5rem 5rem 3rem; display:flex; align-items:baseline; gap:1.2rem; border-bottom:1px solid var(--border); }
+    .sec-head h2 { font-family:'Bebas Neue',sans-serif; font-size:3.2rem; letter-spacing:.04em; }
+    .sec-badge { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.12em; color:var(--accent); border:1px solid rgba(200,244,0,.4); padding:.2rem .55rem; border-radius:2px; }
+
+    /* CARDS */
+    .cards-section { padding:3rem 5rem 5rem; }
+    .cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:1.5rem; }
+
+    .week-card {
+      background:var(--card); border:1px solid var(--border); border-radius:4px;
+      padding:2rem 1.8rem 1.6rem; display:flex; flex-direction:column; gap:1rem;
+      transition:border-color .2s, transform .25s;
+      text-decoration:none; color:inherit; position:relative; overflow:hidden;
+    }
+    .week-card::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(135deg, rgba(200,244,0,.03), transparent);
+      opacity:0; transition:opacity .2s;
+    }
+    .week-card:not(.planned):hover { border-color:rgba(200,244,0,.35); transform:translateY(-3px); }
+    .week-card:not(.planned):hover::before { opacity:1; }
+    .week-card.planned { opacity:.5; cursor:default; pointer-events:none; }
+
+    .card-week-no { font-family:'Bebas Neue',sans-serif; font-size:3rem; line-height:1; color:var(--accent); }
+    .week-card.planned .card-week-no { color:var(--muted); }
+    .card-title { font-family:'Space Mono',monospace; font-size:.78rem; font-weight:700; line-height:1.4; color:var(--text); }
+    .week-card.planned .card-title { color:var(--muted); }
+    .card-desc { font-size:.82rem; line-height:1.65; color:#777; flex:1; }
+
+    .card-btn {
+      margin-top:.5rem; display:inline-flex; align-items:center; gap:.5rem;
+      font-family:'Space Mono',monospace; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase;
+      color:#000; background:var(--accent); padding:.45rem 1rem; border-radius:2px; width:fit-content; transition:background .15s;
+    }
+    .week-card:hover .card-btn { background:#d6ff00; }
+    .card-btn-planned {
+      font-family:'Space Mono',monospace; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase;
+      color:var(--muted); border:1px solid var(--border); padding:.45rem 1rem; border-radius:2px; width:fit-content;
     }
 
-    .hero-meta {
-      margin-top: 2.5rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2rem;
-      position: relative;
-    }
-    .hero-meta-item {
-      font-family: 'Space Mono', monospace;
-      font-size: .7rem;
-      color: var(--muted);
-    }
-    .hero-meta-item strong {
-      display: block;
-      color: var(--text);
-      font-size: .8rem;
-      margin-bottom: .2rem;
-    }
+    /* TIMELINE */
+    .timeline-section { padding:0 5rem 6rem; }
+    .timeline-title { font-family:'Space Mono',monospace; font-size:.62rem; letter-spacing:.2em; color:var(--muted); text-transform:uppercase; margin-bottom:1.5rem; }
+    .timeline { display:flex; flex-direction:column; }
+    .tl-item { display:flex; align-items:stretch; gap:1.5rem; padding:.9rem 0; }
+    .tl-left { display:flex; flex-direction:column; align-items:center; width:20px; flex-shrink:0; }
+    .tl-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+    .tl-dot.done { background:var(--accent); box-shadow:0 0 8px var(--accent); }
+    .tl-dot.wip  { background:var(--accent2); box-shadow:0 0 8px var(--accent2); }
+    .tl-dot.plan { background:transparent; border:1px solid var(--muted); }
+    .tl-line { flex:1; width:1px; background:var(--border); margin:4px 0; }
+    .tl-item:last-child .tl-line { display:none; }
+    .tl-head { font-family:'Space Mono',monospace; font-size:.7rem; font-weight:700; margin-bottom:.2rem; }
+    .tl-head.done { color:var(--accent); }
+    .tl-head.wip  { color:var(--accent2); }
+    .tl-head.plan { color:var(--muted); }
+    .tl-sub { font-size:.78rem; color:#666; line-height:1.5; }
 
-    .hero-scroll {
-      position: absolute;
-      right: 4rem; bottom: 3rem;
-      font-family: 'Space Mono', monospace;
-      font-size: .6rem;
-      letter-spacing: .2em;
-      color: var(--muted);
-      writing-mode: vertical-rl;
-      display: flex;
-      align-items: center;
-      gap: .5rem;
+    /* PROJECT INFO STRIP */
+    .info-strip {
+      border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+      padding:3rem 5rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:2rem;
     }
-    .hero-scroll::after {
-      content: '';
-      display: block;
-      width: 1px; height: 60px;
-      background: linear-gradient(to bottom, var(--muted), transparent);
-    }
+    .info-strip-item { }
+    .info-strip-label { font-family:'Space Mono',monospace; font-size:.56rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
+    .info-strip-val { font-size:.9rem; color:var(--text); line-height:1.5; }
 
-    /* ── LAYOUT ── */
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 4rem;
-    }
+    /* FOOTER */
+    footer { padding:2.8rem 5rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+    footer .fl { font-family:'Space Mono',monospace; font-size:.64rem; color:var(--muted); line-height:1.9; }
+    footer .fl strong { color:var(--text); display:block; margin-bottom:.1rem; }
+    footer .fr { font-family:'Space Mono',monospace; font-size:.58rem; color:#2a2a2a; letter-spacing:.12em; }
 
-    /* ── SECTION HEADER ── */
-    .section-header {
-      padding: 5rem 4rem 3rem;
-      display: flex;
-      align-items: baseline;
-      gap: 1.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .section-header h2 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 3.5rem;
-      letter-spacing: .02em;
-    }
-    .section-header .count {
-      font-family: 'Space Mono', monospace;
-      font-size: .7rem;
-      color: var(--accent);
-      border: 1px solid var(--accent);
-      padding: .2rem .5rem;
-      letter-spacing: .1em;
-    }
+    /* ANIMATIONS */
+    .anim { opacity:0; transform:translateY(18px); transition:opacity .5s ease, transform .5s ease; }
+    .anim.vis { opacity:1; transform:translateY(0); }
 
-    /* ── ENTRIES ── */
-    #entries { padding-bottom: 8rem; }
-
-    .entry {
-      display: grid;
-      grid-template-columns: 200px 1fr;
-      border-bottom: 1px solid var(--border);
-      transition: background .2s;
-    }
-    .entry:hover { background: #0d0d0d; }
-
-    .entry-sidebar {
-      padding: 3rem 2rem 3rem 4rem;
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: .5rem;
-      position: relative;
-    }
-    .entry-sidebar::before {
-      content: '';
-      position: absolute;
-      top: 3.4rem; right: -4px;
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 10px var(--accent);
-    }
-
-    .entry-week {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 3rem;
-      color: var(--accent);
-      line-height: 1;
-    }
-    .entry-date {
-      font-family: 'Space Mono', monospace;
-      font-size: .6rem;
-      color: var(--muted);
-      letter-spacing: .1em;
-    }
-    .entry-status {
-      margin-top: auto;
-      display: inline-block;
-      font-family: 'Space Mono', monospace;
-      font-size: .55rem;
-      letter-spacing: .15em;
-      text-transform: uppercase;
-      padding: .25rem .6rem;
-      border-radius: 2px;
-    }
-    .entry-status.done    { background: rgba(212,247,0,.12); color: var(--accent); border: 1px solid rgba(212,247,0,.3); }
-    .entry-status.wip     { background: rgba(255,78,0,.12); color: var(--accent2); border: 1px solid rgba(255,78,0,.3); }
-    .entry-status.planned { background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid var(--border); }
-
-    .entry-body {
-      padding: 3rem 4rem 3rem 3rem;
-    }
-    .entry-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 2rem;
-      letter-spacing: .04em;
-      margin-bottom: 1.2rem;
-      color: var(--text);
-    }
-    .entry-desc {
-      font-size: .92rem;
-      line-height: 1.75;
-      color: #aaa;
-      max-width: 680px;
-      margin-bottom: 1.8rem;
-    }
-
-    /* Tasks */
-    .tasks {
-      display: flex;
-      flex-direction: column;
-      gap: .5rem;
-      margin-bottom: 1.8rem;
-    }
-    .task {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      font-family: 'Space Mono', monospace;
-      font-size: .72rem;
-      color: #777;
-    }
-    .task.done { color: #aaa; }
-    .task .check {
-      width: 14px; height: 14px;
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .task.done .check {
-      background: var(--accent);
-      border-color: var(--accent);
-    }
-    .task.done .check::after {
-      content: '✓';
-      font-size: .5rem;
-      color: #000;
-      font-weight: 700;
-    }
-
-    /* Tags */
-    .entry-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .5rem;
-    }
-    .tag {
-      font-family: 'Space Mono', monospace;
-      font-size: .58rem;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      padding: .25rem .7rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      border-radius: 2px;
-    }
-    .tag.highlight {
-      border-color: rgba(212,247,0,.25);
-      color: var(--accent);
-      background: rgba(212,247,0,.05);
-    }
-
-    /* ── TECH STACK STRIP ── */
-    .tech-strip {
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 1.2rem 4rem;
-      display: flex;
-      align-items: center;
-      gap: 3rem;
-      overflow-x: auto;
-    }
-    .tech-strip-label {
-      font-family: 'Space Mono', monospace;
-      font-size: .6rem;
-      color: var(--muted);
-      letter-spacing: .2em;
-      white-space: nowrap;
-    }
-    .tech-items {
-      display: flex;
-      gap: 2rem;
-      align-items: center;
-    }
-    .tech-item {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.1rem;
-      letter-spacing: .1em;
-      color: #444;
-      white-space: nowrap;
-      transition: color .2s;
-    }
-    .tech-item:hover { color: var(--accent); }
-    .tech-item.active { color: var(--text); }
-
-    /* ── FOOTER ── */
-    footer {
-      padding: 3rem 4rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    footer .left {
-      font-family: 'Space Mono', monospace;
-      font-size: .65rem;
-      color: var(--muted);
-      line-height: 1.8;
-    }
-    footer .left strong { color: var(--text); display: block; margin-bottom: .2rem; }
-    footer .right {
-      font-family: 'Space Mono', monospace;
-      font-size: .6rem;
-      color: var(--muted);
-      letter-spacing: .1em;
-    }
-
-    /* ── ANIMATIONS ── */
-    .entry {
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity .5s ease, transform .5s ease;
-    }
-    .entry.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 768px) {
-      .hero { padding: 2rem 1.5rem 3rem; }
-      .hero-scroll { display: none; }
-      .section-header { padding: 3rem 1.5rem 2rem; }
-      .entry { grid-template-columns: 1fr; }
-      .entry-sidebar { padding: 2rem 1.5rem 1rem; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; align-items: center; flex-wrap: wrap; gap: 1rem; }
-      .entry-sidebar::before { display: none; }
-      .entry-body { padding: 1.5rem 1.5rem 2rem; }
-      .tech-strip { padding: 1rem 1.5rem; }
-      footer { padding: 2rem 1.5rem; }
-      .container { padding: 0 1.5rem; }
+    @media(max-width:900px){
+      nav,.hero,.tech-strip,.sec-head,.cards-section,.timeline-section,.info-strip,footer{ padding-left:1.5rem; padding-right:1.5rem; }
+      .hero{ padding-bottom:3rem; }
+      .scroll-hint{ display:none; }
+      .info-strip{ grid-template-columns:1fr 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <!-- HERO -->
-  <header class="hero">
-    <div class="hero-grid"></div>
-    <div class="hero-lines">
-      <span></span><span></span><span></span><span></span>
-    </div>
-    <div class="hero-tag">Sistem Analizi ve Tasarımı — Proje Günlüğü</div>
-    <h1>
-      PARKUR
-      <em>OYUNU</em>
-    </h1>
-    <div class="hero-meta">
-      <div class="hero-meta-item">
-        <strong>Muhammed Aziz Kılıç</strong>
-        Geliştirici
-      </div>
-      <div class="hero-meta-item">
-        <strong>Unity + C#</strong>
-        Teknoloji Yığını
-      </div>
-      <div class="hero-meta-item">
-        <strong>Güz Dönemi</strong>
-        2024–2025
-      </div>
-      <div class="hero-meta-item">
-        <strong>Haftalık İlerleme</strong>
-        Proje Blogu
-      </div>
-    </div>
-    <div class="hero-scroll">AŞAĞI KAY</div>
-  </header>
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">BALL<span>RUNNER</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="active">Ana Sayfa</a>
+    <a href="hafta-1.html">Hafta 1</a>
+    <a href="hafta-2.html">Hafta 2</a>
+  </div>
+  <span class="nav-status">2025-2026 BAHAR</span>
+</nav>
 
-  <!-- TECH STRIP -->
-  <div class="tech-strip">
-    <span class="tech-strip-label">STACK</span>
-    <div class="tech-items">
-      <span class="tech-item active">UNITY</span>
-      <span class="tech-item active">C#</span>
-      <span class="tech-item">PHYSICS ENGINE</span>
-      <span class="tech-item">CINEMACHINE</span>
-      <span class="tech-item">ANIMATOR</span>
-      <span class="tech-item">SCENE MANAGEMENT</span>
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-run"><span></span><span></span><span></span><span></span></div>
+  <p class="hero-eyebrow">Sistem Analizi ve Tasarımı — 2025-2026 Bahar — Proje Blogu</p>
+  <h1>BALL<br><span class="sub">RUNNER</span></h1>
+  <div class="hero-meta">
+    <div class="hm"><strong>Muhammed Aziz Kılıç</strong>Öğrenci / Geliştirici</div>
+    <div class="hm"><strong>Unity 3D + C#</strong>Teknoloji Yığını</div>
+    <div class="hm"><strong>Hassa MYO</strong>Bilgisayar Programcılığı</div>
+    <div class="hm"><strong>8 Haftalık Plan</strong>Dönem Projesi</div>
+  </div>
+  <div class="scroll-hint">KAY</div>
+</header>
+
+<!-- TECH STRIP -->
+<div class="tech-strip">
+  <span class="ts-label">STACK</span>
+  <div class="ts-items">
+    <span class="ts-item on">UNITY 3D</span>
+    <span class="ts-item on">C#</span>
+    <span class="ts-item on">PHYSICS ENGINE</span>
+    <span class="ts-item">CINEMACHINE</span>
+    <span class="ts-item">ANIMATOR</span>
+    <span class="ts-item">SCENE MANAGEMENT</span>
+    <span class="ts-item">HUD / UI TOOLKIT</span>
+  </div>
+</div>
+
+<!-- PROJE BİLGİLERİ -->
+<div class="info-strip">
+  <div class="info-strip-item anim">
+    <p class="info-strip-label">Hazırlayan</p>
+    <p class="info-strip-val">Muhammed Aziz Kılıç</p>
+  </div>
+  <div class="info-strip-item anim">
+    <p class="info-strip-label">Kurum</p>
+    <p class="info-strip-val">Hassa Meslek Yüksekokulu</p>
+  </div>
+  <div class="info-strip-item anim">
+    <p class="info-strip-label">Bölüm</p>
+    <p class="info-strip-val">Bilgisayar Programcılığı</p>
+  </div>
+  <div class="info-strip-item anim">
+    <p class="info-strip-label">Akademik Dönem</p>
+    <p class="info-strip-val">2025-2026 Bahar</p>
+  </div>
+  <div class="info-strip-item anim">
+    <p class="info-strip-label">Proje Adı</p>
+    <p class="info-strip-val">Ball Runner — 3D Top Koşusu</p>
+  </div>
+  <div class="info-strip-item anim">
+    <p class="info-strip-label">Hedef Platform</p>
+    <p class="info-strip-val">PC (Windows/Mac)</p>
+  </div>
+</div>
+
+<!-- HAFTALIK RAPORLAR CARDS -->
+<div class="sec-head">
+  <h2>HAFTALIK RAPORLAR</h2>
+  <span class="sec-badge">8 HAFTA</span>
+</div>
+
+<section class="cards-section">
+  <div class="cards-grid">
+
+    <a class="week-card anim" href="hafta-1.html">
+      <span class="card-week-no">01</span>
+      <span class="card-title">Proje Başlangıcı ve Planlama</span>
+      <p class="card-desc">Oyun konseptinin belirlenmesi, Unity proje kurulumu, GDD taslağı ve temel mekanik listesinin çıkarılması.</p>
+      <span class="card-btn">Raporı Oku →</span>
+    </a>
+
+    <a class="week-card anim" href="hafta-2.html">
+      <span class="card-week-no">02</span>
+      <span class="card-title">Gereksinim Toplama ve Paydaş Analizi</span>
+      <p class="card-desc">FR/NFR gereksinimleri, paydaş tablosu, SMART hedefler, iş akışı modelleme ve problem ifadesi.</p>
+      <span class="card-btn">Raporı Oku →</span>
+    </a>
+
+    <div class="week-card planned anim">
+      <span class="card-week-no">03</span>
+      <span class="card-title">Proje Teklif Raporu Hazırlığı</span>
+      <p class="card-desc">Teklif raporunun yazılması, proje kapsamının resmileştirilmesi ve danışman onayı.</p>
+      <span class="card-btn-planned">Yakında</span>
+    </div>
+
+    <div class="week-card planned anim">
+      <span class="card-week-no">04</span>
+      <span class="card-title">Sistem Analizi ve UML Diyagramları</span>
+      <p class="card-desc">Use Case diyagramı, sınıf diyagramı ve sekans diyagramlarının çizilmesi.</p>
+      <span class="card-btn-planned">Yakında</span>
+    </div>
+
+    <div class="week-card planned anim">
+      <span class="card-week-no">05</span>
+      <span class="card-title">Sistem Tasarımı ve Mimari</span>
+      <p class="card-desc">Oyun mimarisinin oluşturulması, sahne yapısı ve C# script mimarisinin tasarlanması.</p>
+      <span class="card-btn-planned">Yakında</span>
+    </div>
+
+    <div class="week-card planned anim">
+      <span class="card-week-no">06</span>
+      <span class="card-title">Prototip / Wireframe Geliştirme</span>
+      <p class="card-desc">Oynanabilir ilk prototip, HUD wireframe'leri ve sahne düzeni oluşturma.</p>
+      <span class="card-btn-planned">Yakında</span>
+    </div>
+
+    <div class="week-card planned anim">
+      <span class="card-week-no">07</span>
+      <span class="card-title">Kodlama ve Test</span>
+      <p class="card-desc">Tüm mekaniklerin entegrasyonu, çarpışma ve skor sistemleri, oyun döngüsü testleri.</p>
+      <span class="card-btn-planned">Yakında</span>
+    </div>
+
+    <div class="week-card planned anim">
+      <span class="card-week-no">08</span>
+      <span class="card-title">Sunum ve Final Raporu</span>
+      <p class="card-desc">Final demosunun hazırlanması, son raporun yazılması ve sınıf sunumu.</p>
+      <span class="card-btn-planned">Yakında</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- PROGRESS TIMELINE -->
+<section class="timeline-section">
+  <p class="timeline-title">— İlerleme Durumu</p>
+  <div class="timeline">
+    <div class="tl-item anim">
+      <div class="tl-left"><span class="tl-dot done"></span><span class="tl-line"></span></div>
+      <div class="tl-content"><p class="tl-head done">Hafta 1 — Tamamlandı ✓</p><p class="tl-sub">Proje başlangıcı, konsept, Unity kurulumu ve GDD taslağı tamamlandı</p></div>
+    </div>
+    <div class="tl-item anim">
+      <div class="tl-left"><span class="tl-dot done"></span><span class="tl-line"></span></div>
+      <div class="tl-content"><p class="tl-head done">Hafta 2 — Tamamlandı ✓</p><p class="tl-sub">Paydaş analizi, FR/NFR gereksinimleri ve SMART hedefler belirlendi</p></div>
+    </div>
+    <div class="tl-item anim">
+      <div class="tl-left"><span class="tl-dot wip"></span><span class="tl-line"></span></div>
+      <div class="tl-content"><p class="tl-head wip">Hafta 3 — Devam Ediyor</p><p class="tl-sub">Proje teklif raporu hazırlanıyor</p></div>
+    </div>
+    <div class="tl-item anim">
+      <div class="tl-left"><span class="tl-dot plan"></span><span class="tl-line"></span></div>
+      <div class="tl-content"><p class="tl-head plan">Hafta 4–8 — Planlanan</p><p class="tl-sub">Sistem tasarımı, UML diyagramları, prototip, kodlama ve final sunumu</p></div>
     </div>
   </div>
+</section>
 
-  <!-- ENTRIES SECTION -->
-  <section id="entries">
-    <div class="section-header">
-      <h2>HAFTALIK GİRDİLER</h2>
-      <span class="count" id="entry-count">01 GİRDİ</span>
-    </div>
+<!-- FOOTER -->
+<footer>
+  <div class="fl">
+    <strong>Muhammed Aziz Kılıç</strong>
+    Sistem Analizi ve Tasarımı — Proje İlerleme Blogu<br>
+    Ball Runner (Unity 3D Top Koşusu) · C# · Unity
+  </div>
+  <div class="fr">GITHUB PAGES · STATIC BLOG · 2025-2026 BAHAR</div>
+</footer>
 
-    <!-- ═══════════════════════════════════════════
-         HAFTA 1 — Başlangıç & Planlama
-    ═══════════════════════════════════════════════ -->
-    <article class="entry" data-week="1">
-      <div class="entry-sidebar">
-        <span class="entry-week">W01</span>
-        <span class="entry-date">— HAFTA 1</span>
-        <span class="entry-status done">Tamamlandı</span>
-      </div>
-      <div class="entry-body">
-        <h3 class="entry-title">Proje Başlangıcı &amp; Kapsam Belirleme</h3>
-        <p class="entry-desc">
-          Projenin ilk haftasında oyunun genel konsepti belirlendi. Birinci şahıs bakış açısıyla
-          oynanan, parkur mekaniklerine dayalı bir aksiyon-platform oyunu geliştirilmesine karar
-          verildi. Unity oyun motoru ve C# dili kullanılarak fizik tabanlı hareket sistemi
-          üzerine inşa edilecek proje için temel mimari kararlar alındı.
-        </p>
-
-        <div class="tasks">
-          <div class="task done">
-            <span class="check"></span>
-            Proje konusu belirlendi ve onaylandı
-          </div>
-          <div class="task done">
-            <span class="check"></span>
-            Unity projesi oluşturuldu, versiyon kontrolü (Git) ayarlandı
-          </div>
-          <div class="task done">
-            <span class="check"></span>
-            Oyun tasarım dokümanı (GDD) taslağı hazırlandı
-          </div>
-          <div class="task done">
-            <span class="check"></span>
-            Temel mekanik listesi çıkarıldı (koşu, zıplama, tırmanma, kayan)
-          </div>
-          <div class="task done">
-            <span class="check"></span>
-            Referans oyunlar incelendi (Mirror's Edge, Ghostrunner)
-          </div>
-        </div>
-
-        <div class="entry-tags">
-          <span class="tag highlight">Planlama</span>
-          <span class="tag highlight">GDD</span>
-          <span class="tag">Unity Setup</span>
-          <span class="tag">Git</span>
-          <span class="tag">Kapsam</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- YENİ GİRDİLER BURAYA EKLENECEK -->
-
-  </section>
-
-  <!-- FOOTER -->
-  <footer>
-    <div class="left">
-      <strong>Muhammed Aziz Kılıç</strong>
-      Sistem Analizi ve Tasarımı — Proje İlerleme Blogu<br>
-      Parkur Oyunu · Unity · C#
-    </div>
-    <div class="right">GITHUB PAGES · STATIC BLOG</div>
-  </footer>
-
-  <script>
-    // Intersection Observer — girdi animasyonu
-    const entries = document.querySelectorAll('.entry');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry, i) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => entry.target.classList.add('visible'), i * 80);
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.05 });
-    entries.forEach(e => observer.observe(e));
-
-    // Girdi sayacını güncelle
-    const count = document.querySelectorAll('.entry').length;
-    const pad = n => String(n).padStart(2, '0');
-    document.getElementById('entry-count').textContent = `${pad(count)} GİRDİ`;
-  </script>
+<script>
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('vis'), i * 60);
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.06 });
+  document.querySelectorAll('.anim').forEach(el => obs.observe(el));
+</script>
 </body>
 </html>

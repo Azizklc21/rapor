@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hafta 1 — Proje Başlangıcı | Ball Runner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #080808;
+      --surface: #101010;
+      --border:  #1c1c1c;
+      --accent:  #c8f400;
+      --accent2: #ff4b00;
+      --text:    #e6e6e6;
+      --muted:   #484848;
+      --card:    #0e0e0e;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; }
+    body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-weight:300; overflow-x:hidden; }
+
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size:200px 200px; pointer-events:none; z-index:9999; opacity:.4;
+    }
+
+    /* NAV */
+    nav {
+      position:sticky; top:0; z-index:100;
+      background:rgba(8,8,8,.92); backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+      padding:.9rem 5rem;
+      display:flex; align-items:center; justify-content:space-between; gap:2rem;
+    }
+    .nav-logo {
+      font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:.08em;
+      color:var(--text); text-decoration:none;
+    }
+    .nav-logo span { color:var(--accent); }
+    .nav-links { display:flex; gap:2rem; }
+    .nav-links a {
+      font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.18em;
+      text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color .2s;
+    }
+    .nav-links a:hover, .nav-links a.active { color:var(--accent); }
+    .nav-back {
+      font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.15em;
+      text-transform:uppercase; color:var(--muted); text-decoration:none;
+      display:flex; align-items:center; gap:.5rem; transition:color .2s;
+    }
+    .nav-back:hover { color:var(--accent); }
+
+    /* PAGE HEADER */
+    .page-header {
+      position:relative; padding:6rem 5rem 5rem; border-bottom:1px solid var(--border); overflow:hidden;
+    }
+    .page-header-grid {
+      position:absolute; inset:0;
+      background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+      background-size:64px 64px; opacity:.25;
+    }
+    .page-header-run { position:absolute; inset:0; overflow:hidden; }
+    .page-header-run span {
+      position:absolute; display:block; height:1px;
+      background:linear-gradient(90deg,transparent,var(--accent),transparent);
+      opacity:.1; animation:linerun 8s linear infinite;
+    }
+    .page-header-run span:nth-child(1){ width:35%; top:30%; animation-delay:0s; }
+    .page-header-run span:nth-child(2){ width:20%; top:65%; animation-delay:3s; }
+    @keyframes linerun { 0%{left:-55%} 100%{left:115%} }
+
+    .ph-eyebrow {
+      font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.22em;
+      color:var(--accent); text-transform:uppercase; margin-bottom:1.2rem;
+      display:flex; align-items:center; gap:.8rem; position:relative;
+    }
+    .ph-eyebrow::before { content:''; width:24px; height:1px; background:var(--accent); }
+    .ph-week-badge {
+      font-family:'Bebas Neue',sans-serif; font-size:8rem; line-height:.85;
+      color:rgba(200,244,0,.06); position:absolute; right:5rem; bottom:-1rem;
+      pointer-events:none; user-select:none; letter-spacing:.02em;
+    }
+    .ph-title {
+      font-family:'Bebas Neue',sans-serif;
+      font-size:clamp(3rem,7vw,6rem); line-height:.92; letter-spacing:.02em;
+      position:relative; margin-bottom:1.8rem;
+    }
+    .ph-meta {
+      display:flex; flex-wrap:wrap; gap:2rem; position:relative;
+    }
+    .ph-meta-item { font-family:'Space Mono',monospace; font-size:.64rem; color:var(--muted); }
+    .ph-meta-item strong { display:block; color:var(--text); font-size:.72rem; margin-bottom:.1rem; }
+    .status-pill {
+      display:inline-flex; align-items:center; gap:.45rem;
+      font-family:'Space Mono',monospace; font-size:.56rem; letter-spacing:.14em; text-transform:uppercase;
+      padding:.3rem .8rem; border-radius:2px;
+      background:rgba(200,244,0,.1); color:var(--accent); border:1px solid rgba(200,244,0,.25);
+    }
+    .status-pill::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 6px var(--accent); }
+
+    /* CONTENT */
+    .content { max-width:880px; margin:0 auto; padding:4rem 5rem 6rem; }
+
+    .section {
+      margin-bottom:3.5rem; opacity:0; transform:translateY(16px);
+      transition:opacity .5s ease, transform .5s ease;
+    }
+    .section.vis { opacity:1; transform:translateY(0); }
+
+    .section-label {
+      font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.2em;
+      text-transform:uppercase; color:var(--accent); margin-bottom:1rem;
+      display:flex; align-items:center; gap:.7rem;
+    }
+    .section-label::after { content:''; flex:1; height:1px; background:rgba(200,244,0,.15); max-width:200px; }
+
+    .section h2 { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:.04em; margin-bottom:.9rem; }
+
+    p { font-size:.92rem; line-height:1.85; color:#888; margin-bottom:1rem; }
+
+    /* TASK LIST */
+    .tasks { display:flex; flex-direction:column; gap:.5rem; }
+    .task { display:flex; align-items:flex-start; gap:.9rem; font-family:'Space Mono',monospace; font-size:.7rem; color:#5a5a5a; line-height:1.55; }
+    .task.done { color:#999; }
+    .chk { width:15px; height:15px; border:1px solid var(--border); border-radius:2px; flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; }
+    .task.done .chk { background:var(--accent); border-color:var(--accent); }
+    .task.done .chk::after { content:'✓'; font-size:.5rem; color:#000; font-weight:700; }
+
+    /* SMART GOALS */
+    .smart-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; margin-top:.5rem; }
+    .smart-card {
+      background:var(--card); border:1px solid var(--border); border-radius:3px;
+      padding:1.4rem 1.3rem;
+    }
+    .smart-no { font-family:'Bebas Neue',sans-serif; font-size:2rem; color:rgba(200,244,0,.2); line-height:1; margin-bottom:.6rem; }
+    .smart-title { font-family:'Space Mono',monospace; font-size:.65rem; font-weight:700; color:var(--accent); margin-bottom:.5rem; letter-spacing:.08em; }
+    .smart-text { font-size:.8rem; line-height:1.65; color:#777; }
+
+    /* SCOPE TABLE */
+    .scope-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .scope-col { background:var(--card); border:1px solid var(--border); border-radius:3px; padding:1.5rem 1.4rem; }
+    .scope-col-title { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; margin-bottom:1rem; }
+    .scope-col-title.in  { color:var(--accent); }
+    .scope-col-title.out { color:var(--accent2); }
+    .scope-item { display:flex; gap:.7rem; align-items:flex-start; font-size:.8rem; color:#777; line-height:1.6; margin-bottom:.6rem; }
+    .scope-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; margin-top:.45rem; }
+    .scope-dot.in  { background:var(--accent); }
+    .scope-dot.out { background:var(--accent2); }
+
+    /* INFO BOXES */
+    .info-box { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:3px; padding:1.4rem 1.5rem; margin-bottom:1rem; }
+    .info-box p { margin:0; font-size:.86rem; }
+    .info-box .ib-label { font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:.5rem; }
+
+    /* TAGS */
+    .tags { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:2rem; }
+    .tag { font-family:'Space Mono',monospace; font-size:.56rem; letter-spacing:.1em; text-transform:uppercase; padding:.22rem .65rem; background:var(--surface); border:1px solid var(--border); color:var(--muted); border-radius:2px; }
+    .tag.hi { border-color:rgba(200,244,0,.22); color:var(--accent); background:rgba(200,244,0,.05); }
+
+    /* PAGINATION */
+    .pagination {
+      border-top:1px solid var(--border); padding:2.5rem 5rem;
+      display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;
+    }
+    .page-link {
+      font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase;
+      color:var(--muted); text-decoration:none; display:flex; align-items:center; gap:.6rem; transition:color .2s;
+    }
+    .page-link:hover { color:var(--accent); }
+    .page-link.next { background:var(--accent); color:#000; padding:.5rem 1.2rem; border-radius:2px; }
+    .page-link.next:hover { background:#d6ff00; color:#000; }
+    .page-link.disabled { opacity:.3; pointer-events:none; }
+
+    /* FOOTER */
+    footer { padding:2.5rem 5rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+    footer .fl { font-family:'Space Mono',monospace; font-size:.62rem; color:var(--muted); line-height:1.9; }
+    footer .fl strong { color:var(--text); display:block; }
+    footer .fr { font-family:'Space Mono',monospace; font-size:.56rem; color:#2a2a2a; letter-spacing:.1em; }
+
+    @media(max-width:900px){
+      nav,.page-header,.content,.pagination,footer{ padding-left:1.5rem; padding-right:1.5rem; }
+      .page-header{ padding-top:3.5rem; padding-bottom:3rem; }
+      .ph-week-badge{ display:none; }
+      .scope-grid{ grid-template-columns:1fr; }
+      .smart-grid{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">BALL<span>RUNNER</span></a>
+  <div class="nav-links">
+    <a href="index.html">Ana Sayfa</a>
+    <a href="hafta-1.html" class="active">Hafta 1</a>
+    <a href="hafta-2.html">Hafta 2</a>
+  </div>
+  <a href="index.html" class="nav-back">← Tüm Raporlar</a>
+</nav>
+
+<!-- PAGE HEADER -->
+<header class="page-header">
+  <div class="page-header-grid"></div>
+  <div class="page-header-run"><span></span><span></span></div>
+  <p class="ph-eyebrow">Hafta 1 · Ball Runner Proje Günlüğü</p>
+  <h1 class="ph-title">Proje Başlangıcı<br>ve Planlama</h1>
+  <div class="ph-meta">
+    <div class="ph-meta-item"><strong>Muhammed Aziz Kılıç</strong>Öğrenci / Geliştirici</div>
+    <div class="ph-meta-item"><strong>Unity 3D + C#</strong>Teknoloji</div>
+    <div class="ph-meta-item"><strong>2025-2026 Bahar</strong>Dönem</div>
+    <div class="ph-meta-item" style="margin-top:.1rem;"><span class="status-pill">Tamamlandı</span></div>
+  </div>
+  <div class="ph-week-badge">W01</div>
+</header>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- PROJE ÖZETİ -->
+  <div class="section">
+    <p class="section-label">Proje Özeti</p>
+    <p>Bu proje, Unity 3D oyun motoru kullanılarak geliştirilen bir 3D engel koşusu oyunudur. Oyuncu, kontrol ettiği yeşil topla beyaz platformda ilerlerken kırmızı engel kutularından kaçınır, renkli toplanabilir objeleri devşirir ve bitiş kapısına ulaşmayı hedefler.</p>
+    <p>Proje; oyun geliştiriciliğine yeni başlayan öğrenciler için erişilebilir ve eğlenceli bir örnek sunmakta, Unity fizik motoru ve C# scripting becerilerinin uygulamalı öğrenilmesine imkân tanımaktadır. Asset Store bağımlılığı olmadan sıfırdan inşa edilecek fizik tabanlı hareket sistemi projeyi benzerlerinden ayırmaktadır.</p>
+  </div>
+
+  <!-- HAFTA 1 ÇALIŞMALARI -->
+  <div class="section">
+    <p class="section-label">Bu Hafta Yapılanlar</p>
+    <div class="tasks">
+      <div class="task done"><span class="chk"></span>Oyun konsepti belirlendi ve onaylandı — Ball Runner: 3D Top Koşusu (Engel Aşma Oyunu)</div>
+      <div class="task done"><span class="chk"></span>Unity 3D projesi oluşturuldu; Git ile versiyon kontrolü kuruldu</div>
+      <div class="task done"><span class="chk"></span>Oyun Tasarım Dokümanı (GDD) taslağı hazırlandı</div>
+      <div class="task done"><span class="chk"></span>Temel mekanik listesi çıkarıldı: hareket kontrolü, çarpışma, skor, kamera takibi, bitiş ekranı</div>
+      <div class="task done"><span class="chk"></span>Hedef kitle tanımlandı: 10–35 yaş, casual arcade oyuncuları</div>
+      <div class="task done"><span class="chk"></span>Referans oyunlar incelendi: Subway Surfers, Temple Run</div>
+      <div class="task done"><span class="chk"></span>8 haftalık proje zaman planı taslağı oluşturuldu</div>
+      <div class="task done"><span class="chk"></span>Kapsam içi ve kapsam dışı özellikler netleştirildi</div>
+    </div>
+  </div>
+
+  <!-- HEDEF KİTLE -->
+  <div class="section">
+    <p class="section-label">Hedef Kitle ve Kullanıcı Profili</p>
+    <div class="info-box">
+      <p class="ib-label">Birincil Kullanıcı Profili</p>
+      <p><strong style="color:var(--text)">Yaş Aralığı:</strong> 10–35 yaş, eğlence amaçlı casual oyun oynayan her demografiden kullanıcı</p>
+    </div>
+    <div class="info-box">
+      <p class="ib-label">Teknik Yetkinlik</p>
+      <p>Temel düzey; oyun kontrollerine hızla uyum sağlayabilen, önceki oyun deneyimi gerekmeyen kullanıcılar</p>
+    </div>
+    <div class="info-box">
+      <p class="ib-label">Kullanım Ortamı</p>
+      <p>Günlük veya haftalık, kısa süreli oturumlar (5–15 dakika); masaüstü bilgisayar ortamı</p>
+    </div>
+    <div class="info-box">
+      <p class="ib-label">Temel İhtiyaç ve Motivasyonlar</p>
+      <p>Hızlı eğlence, rekabetçi skor takibi, oyun oynayarak zihin dinlendirme</p>
+    </div>
+  </div>
+
+  <!-- HEDEFLER (SMART) -->
+  <div class="section">
+    <p class="section-label">Proje Hedefleri (SMART)</p>
+    <div class="smart-grid">
+      <div class="smart-card">
+        <div class="smart-no">01</div>
+        <div class="smart-title">Hareket Sistemi</div>
+        <div class="smart-text">Oyuncu kontrolündeki yeşil topun klavye/dokunmatik girişiyle akıcı hareket etmesini <strong style="color:var(--text)">3. haftaya kadar</strong> tam çalışır durumda hayata geçirmek.</div>
+      </div>
+      <div class="smart-card">
+        <div class="smart-no">02</div>
+        <div class="smart-title">Çarpışma Sistemi</div>
+        <div class="smart-text">Kırmızı engel kutularıyla fizik tabanlı çarpışma tespitini implemente etmek ve ölüm/respawn mekanizmasını <strong style="color:var(--text)">4. haftaya kadar</strong> çalışır hale getirmek.</div>
+      </div>
+      <div class="smart-card">
+        <div class="smart-no">03</div>
+        <div class="smart-title">Skor Sistemi</div>
+        <div class="smart-text">Renkli toplanabilir objeleri (sarı ve mavi toplar) eklemek ve skor sistemini <strong style="color:var(--text)">6. haftaya kadar</strong> tamamlamak.</div>
+      </div>
+      <div class="smart-card">
+        <div class="smart-no">04</div>
+        <div class="smart-title">Oyun Sonu Akışı</div>
+        <div class="smart-text">Bitiş kapısına ulaşıldığında kazanma ekranı gösterip sonraki seviyeye geçiş akışını <strong style="color:var(--text)">proje sonuna kadar</strong> hayata geçirmek.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KAPSAM -->
+  <div class="section">
+    <p class="section-label">Proje Kapsamı</p>
+    <div class="scope-grid">
+      <div class="scope-col">
+        <p class="scope-col-title in">Kapsam İçi ✓</p>
+        <div class="scope-item"><span class="scope-dot in"></span>Oyuncu topu hareket kontrolü (klavye girişi, fizik tabanlı yönlendirme)</div>
+        <div class="scope-item"><span class="scope-dot in"></span>Kırmızı engel kutularıyla çarpışma tespiti ve oyuncu ölüm mekaniği</div>
+        <div class="scope-item"><span class="scope-dot in"></span>Renkli toplanabilir objeleri devşirme ve gerçek zamanlı skor sistemi</div>
+        <div class="scope-item"><span class="scope-dot in"></span>Kamera takip sistemi (topun ardından sabit mesafede izleme)</div>
+        <div class="scope-item"><span class="scope-dot in"></span>Bitiş kapısına ulaşınca kazanma ekranı ve yeniden başlama</div>
+      </div>
+      <div class="scope-col">
+        <p class="scope-col-title out">Kapsam Dışı ✗</p>
+        <div class="scope-item"><span class="scope-dot out"></span>Çok oyunculu (multiplayer) mod — ağ altyapısı bu dönem planlanmamıştır</div>
+        <div class="scope-item"><span class="scope-dot out"></span>Mobil uygulama mağazası yayını (App Store / Play Store) — yalnızca PC demo hedeflenmektedir</div>
+        <div class="scope-item"><span class="scope-dot out"></span>Yapay zeka (AI) düşman sistemi — karmaşıklık arttıracağından kapsam dışında tutulmuştur</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROBLEM TANIMI -->
+  <div class="section">
+    <p class="section-label">Problem Tanımı ve Gerekçe</p>
+    <div class="info-box" style="border-left-color:var(--accent2);">
+      <p class="ib-label" style="color:var(--accent2)">Problem İfadesi</p>
+      <p>Casual oyuncular, mevcut engel koşusu oyunlarının yalnızca abonelik veya uygulama içi satın alma yoluyla erişilebilir olması nedeniyle ücretsiz ve teknik olarak öğretilebilir bir 3D oyun deneyiminden mahrum kalmaktadır; bu durum hem oyun zevkini hem de eğitimsel erişilebilirliği olumsuz etkilemektedir.</p>
+    </div>
+    <p>Piyasada Subway Surfers, Temple Run gibi benzer engel koşusu oyunları bulunmakla birlikte bunlar lisanslı ve karmaşık yapılardır. Eğitim amaçlı basit, anlaşılır ve kaynak kodu açık bir 3D engel oyunu örneği oldukça kısıtlıdır.</p>
+    <p>Bu proje, Unity oyun motorunun temel bileşenlerini (fizik sistemi, çarpışma tespiti, kamera takibi, sahne yönetimi) pratikte uygulamak için somut bir ortam sağlamaktadır.</p>
+  </div>
+
+  <!-- ZAMAN PLANI -->
+  <div class="section">
+    <p class="section-label">Proje Zaman Planı</p>
+    <div class="tasks">
+      <div class="task done"><span class="chk"></span><span><strong style="color:var(--text)">Hafta 1:</strong> Proje Fikrinin Belirlenmesi ve Planlama</span></div>
+      <div class="task done"><span class="chk"></span><span><strong style="color:var(--text)">Hafta 2:</strong> Gereksinim Toplama ve Paydaş Analizi</span></div>
+      <div class="task"><span class="chk"></span><span><strong style="color:var(--text)">Hafta 3:</strong> Proje Teklif Raporu Hazırlığı</span></div>
+      <div class="task"><span class="chk"></span><span><strong style="color:var(--text)">Hafta 4:</strong> Sistem Analizi ve UML Diyagramları</span></div>
+      <div class="task"><span class="chk"></span><span><strong style="color:var(--text)">Hafta 5:</strong> Sistem Tasarımı ve Mimari</span></div>
+      <div class="task"><span class="chk"></span><span><strong style="color:var(--text)">Hafta 6:</strong> Prototip / Wireframe Geliştirme</span></div>
+      <div class="task"><span class="chk"></span><span><strong style="color:var(--text)">Hafta 7:</strong> Kodlama ve Test</span></div>
+      <div class="task"><span class="chk"></span><span><strong style="color:var(--text)">Hafta 8:</strong> Sunum ve Final Raporu</span></div>
+    </div>
+  </div>
+
+  <!-- ETIKETLER -->
+  <div class="tags section">
+    <span class="tag hi">Planlama</span>
+    <span class="tag hi">GDD</span>
+    <span class="tag hi">Konsept</span>
+    <span class="tag hi">SMART Hedefler</span>
+    <span class="tag">Unity Setup</span>
+    <span class="tag">Git</span>
+    <span class="tag">Kapsam</span>
+    <span class="tag">Zaman Planı</span>
+    <span class="tag">Paydaş</span>
+    <span class="tag">Problem Tanımı</span>
+  </div>
+
+</div><!-- /content -->
+
+<!-- PAGINATION -->
+<div class="pagination">
+  <span class="page-link disabled">← Önceki Hafta</span>
+  <span style="font-family:'Space Mono',monospace;font-size:.6rem;color:var(--muted);">1 / 2</span>
+  <a href="hafta-2.html" class="page-link next">Sonraki Hafta →</a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="fl">
+    <strong>Muhammed Aziz Kılıç</strong>
+    Sistem Analizi ve Tasarımı — Ball Runner · Hafta 1
+  </div>
+  <div class="fr">GITHUB PAGES · 2025-2026 BAHAR</div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver((els) => {
+    els.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('vis'), i * 80);
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.07 });
+  document.querySelectorAll('.section').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

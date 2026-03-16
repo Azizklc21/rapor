@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hafta 2 — Gereksinim Analizi | Ball Runner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #080808;
+      --surface: #101010;
+      --border:  #1c1c1c;
+      --accent:  #c8f400;
+      --accent2: #ff4b00;
+      --text:    #e6e6e6;
+      --muted:   #484848;
+      --card:    #0e0e0e;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; }
+    body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-weight:300; overflow-x:hidden; }
+
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size:200px 200px; pointer-events:none; z-index:9999; opacity:.4;
+    }
+
+    /* NAV */
+    nav {
+      position:sticky; top:0; z-index:100;
+      background:rgba(8,8,8,.92); backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+      padding:.9rem 5rem;
+      display:flex; align-items:center; justify-content:space-between; gap:2rem;
+    }
+    .nav-logo { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:.08em; color:var(--text); text-decoration:none; }
+    .nav-logo span { color:var(--accent); }
+    .nav-links { display:flex; gap:2rem; }
+    .nav-links a { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color .2s; }
+    .nav-links a:hover, .nav-links a.active { color:var(--accent); }
+    .nav-back { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); text-decoration:none; display:flex; align-items:center; gap:.5rem; transition:color .2s; }
+    .nav-back:hover { color:var(--accent); }
+
+    /* PAGE HEADER */
+    .page-header { position:relative; padding:6rem 5rem 5rem; border-bottom:1px solid var(--border); overflow:hidden; }
+    .page-header-grid {
+      position:absolute; inset:0;
+      background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+      background-size:64px 64px; opacity:.25;
+    }
+    .page-header-run { position:absolute; inset:0; overflow:hidden; }
+    .page-header-run span { position:absolute; display:block; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:.1; animation:linerun 8s linear infinite; }
+    .page-header-run span:nth-child(1){ width:40%; top:28%; animation-delay:0s; }
+    .page-header-run span:nth-child(2){ width:18%; top:70%; animation-delay:3.5s; }
+    @keyframes linerun { 0%{left:-55%} 100%{left:115%} }
+
+    .ph-eyebrow { font-family:'Space Mono',monospace; font-size:.6rem; letter-spacing:.22em; color:var(--accent); text-transform:uppercase; margin-bottom:1.2rem; display:flex; align-items:center; gap:.8rem; position:relative; }
+    .ph-eyebrow::before { content:''; width:24px; height:1px; background:var(--accent); }
+    .ph-week-badge { font-family:'Bebas Neue',sans-serif; font-size:8rem; line-height:.85; color:rgba(200,244,0,.06); position:absolute; right:5rem; bottom:-1rem; pointer-events:none; user-select:none; }
+    .ph-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(2.8rem,7vw,5.5rem); line-height:.92; letter-spacing:.02em; position:relative; margin-bottom:1.8rem; }
+    .ph-meta { display:flex; flex-wrap:wrap; gap:2rem; position:relative; }
+    .ph-meta-item { font-family:'Space Mono',monospace; font-size:.64rem; color:var(--muted); }
+    .ph-meta-item strong { display:block; color:var(--text); font-size:.72rem; margin-bottom:.1rem; }
+    .status-pill { display:inline-flex; align-items:center; gap:.45rem; font-family:'Space Mono',monospace; font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; padding:.3rem .8rem; border-radius:2px; background:rgba(200,244,0,.1); color:var(--accent); border:1px solid rgba(200,244,0,.25); }
+    .status-pill::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 6px var(--accent); }
+
+    /* CONTENT */
+    .content { max-width:920px; margin:0 auto; padding:4rem 5rem 6rem; }
+
+    .section { margin-bottom:3.5rem; opacity:0; transform:translateY(16px); transition:opacity .5s ease, transform .5s ease; }
+    .section.vis { opacity:1; transform:translateY(0); }
+
+    .section-label { font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); margin-bottom:1rem; display:flex; align-items:center; gap:.7rem; }
+    .section-label::after { content:''; flex:1; height:1px; background:rgba(200,244,0,.15); max-width:200px; }
+
+    p { font-size:.92rem; line-height:1.85; color:#888; margin-bottom:1rem; }
+
+    /* TASK LIST */
+    .tasks { display:flex; flex-direction:column; gap:.5rem; }
+    .task { display:flex; align-items:flex-start; gap:.9rem; font-family:'Space Mono',monospace; font-size:.7rem; color:#5a5a5a; line-height:1.55; }
+    .task.done { color:#999; }
+    .chk { width:15px; height:15px; border:1px solid var(--border); border-radius:2px; flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; }
+    .task.done .chk { background:var(--accent); border-color:var(--accent); }
+    .task.done .chk::after { content:'✓'; font-size:.5rem; color:#000; font-weight:700; }
+
+    /* REQUIREMENTS TABLE */
+    .req-table { width:100%; border-collapse:collapse; margin-top:.5rem; }
+    .req-table th {
+      font-family:'Space Mono',monospace; font-size:.56rem; letter-spacing:.15em; text-transform:uppercase;
+      color:var(--muted); border-bottom:1px solid var(--border);
+      padding:.7rem .9rem; text-align:left; font-weight:400;
+    }
+    .req-table td { font-size:.82rem; color:#888; padding:.85rem .9rem; border-bottom:1px solid #131313; line-height:1.55; vertical-align:top; }
+    .req-table tr:hover td { background:#0b0b0b; }
+    .req-code { font-family:'Space Mono',monospace; font-size:.62rem; color:var(--accent); background:rgba(200,244,0,.08); border:1px solid rgba(200,244,0,.18); padding:.15rem .45rem; border-radius:2px; white-space:nowrap; }
+    .priority { font-family:'Space Mono',monospace; font-size:.58rem; padding:.15rem .45rem; border-radius:2px; white-space:nowrap; }
+    .priority.high { background:rgba(200,244,0,.08); color:var(--accent); border:1px solid rgba(200,244,0,.18); }
+    .priority.mid  { background:rgba(255,200,0,.08); color:#ffc800; border:1px solid rgba(255,200,0,.18); }
+    .priority.low  { background:rgba(255,255,255,.04); color:var(--muted); border:1px solid var(--border); }
+
+    /* NFR CARDS */
+    .nfr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; }
+    .nfr-card { background:var(--card); border:1px solid var(--border); border-radius:3px; padding:1.4rem 1.3rem; }
+    .nfr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:.8rem; }
+    .nfr-code { font-family:'Space Mono',monospace; font-size:.6rem; color:var(--accent); background:rgba(200,244,0,.08); border:1px solid rgba(200,244,0,.18); padding:.15rem .45rem; border-radius:2px; }
+    .nfr-category { font-family:'Space Mono',monospace; font-size:.55rem; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
+    .nfr-desc { font-size:.82rem; color:#888; line-height:1.65; margin-bottom:.7rem; }
+    .nfr-metric { font-family:'Space Mono',monospace; font-size:.62rem; color:#555; border-top:1px solid var(--border); padding-top:.6rem; line-height:1.5; }
+
+    /* STAKEHOLDER TABLE */
+    .stakeholder-table { width:100%; border-collapse:collapse; margin-top:.5rem; }
+    .stakeholder-table th { font-family:'Space Mono',monospace; font-size:.56rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); padding:.7rem .9rem; text-align:left; font-weight:400; }
+    .stakeholder-table td { font-size:.82rem; color:#888; padding:.85rem .9rem; border-bottom:1px solid #131313; vertical-align:top; line-height:1.55; }
+    .stakeholder-table tr:hover td { background:#0b0b0b; }
+    .impact { font-family:'Space Mono',monospace; font-size:.58rem; padding:.15rem .45rem; border-radius:2px; white-space:nowrap; }
+    .impact.high { background:rgba(200,244,0,.08); color:var(--accent); border:1px solid rgba(200,244,0,.18); }
+    .impact.mid  { background:rgba(255,200,0,.08); color:#ffc800; border:1px solid rgba(255,200,0,.18); }
+    .impact.low  { background:rgba(255,255,255,.04); color:var(--muted); border:1px solid var(--border); }
+
+    /* PROCESS FLOW */
+    .process-list { display:flex; flex-direction:column; gap:1.2rem; }
+    .process-item { background:var(--card); border:1px solid var(--border); border-radius:3px; padding:1.4rem 1.5rem; }
+    .process-no { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:rgba(200,244,0,.15); line-height:1; margin-bottom:.4rem; }
+    .process-title { font-family:'Space Mono',monospace; font-size:.68rem; font-weight:700; color:var(--text); margin-bottom:.9rem; letter-spacing:.06em; }
+    .process-steps { display:flex; flex-direction:column; gap:.45rem; }
+    .process-step { display:flex; gap:.8rem; font-size:.82rem; color:#777; line-height:1.6; }
+    .step-no { font-family:'Space Mono',monospace; font-size:.6rem; color:var(--accent); flex-shrink:0; width:18px; }
+
+    /* INFO BOX */
+    .info-box { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:3px; padding:1.4rem 1.5rem; margin-bottom:1rem; }
+    .info-box p { margin:0; font-size:.86rem; }
+    .info-box .ib-label { font-family:'Space Mono',monospace; font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:.5rem; }
+
+    /* TAGS */
+    .tags { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:2rem; }
+    .tag { font-family:'Space Mono',monospace; font-size:.56rem; letter-spacing:.1em; text-transform:uppercase; padding:.22rem .65rem; background:var(--surface); border:1px solid var(--border); color:var(--muted); border-radius:2px; }
+    .tag.hi { border-color:rgba(200,244,0,.22); color:var(--accent); background:rgba(200,244,0,.05); }
+
+    /* PAGINATION */
+    .pagination { border-top:1px solid var(--border); padding:2.5rem 5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+    .page-link { font-family:'Space Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); text-decoration:none; display:flex; align-items:center; gap:.6rem; transition:color .2s; }
+    .page-link:hover { color:var(--accent); }
+    .page-link.prev { background:var(--card); border:1px solid var(--border); padding:.5rem 1.2rem; border-radius:2px; }
+    .page-link.prev:hover { border-color:rgba(200,244,0,.3); color:var(--accent); }
+    .page-link.disabled { opacity:.3; pointer-events:none; }
+
+    /* FOOTER */
+    footer { padding:2.5rem 5rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+    footer .fl { font-family:'Space Mono',monospace; font-size:.62rem; color:var(--muted); line-height:1.9; }
+    footer .fl strong { color:var(--text); display:block; }
+    footer .fr { font-family:'Space Mono',monospace; font-size:.56rem; color:#2a2a2a; letter-spacing:.1em; }
+
+    @media(max-width:900px){
+      nav,.page-header,.content,.pagination,footer{ padding-left:1.5rem; padding-right:1.5rem; }
+      .page-header{ padding-top:3.5rem; padding-bottom:3rem; }
+      .ph-week-badge{ display:none; }
+      .req-table,.stakeholder-table{ font-size:.75rem; }
+      .req-table td,.stakeholder-table td{ padding:.65rem .6rem; }
+      .nfr-grid{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">BALL<span>RUNNER</span></a>
+  <div class="nav-links">
+    <a href="index.html">Ana Sayfa</a>
+    <a href="hafta-1.html">Hafta 1</a>
+    <a href="hafta-2.html" class="active">Hafta 2</a>
+  </div>
+  <a href="index.html" class="nav-back">← Tüm Raporlar</a>
+</nav>
+
+<!-- PAGE HEADER -->
+<header class="page-header">
+  <div class="page-header-grid"></div>
+  <div class="page-header-run"><span></span><span></span></div>
+  <p class="ph-eyebrow">Hafta 2 · Ball Runner Proje Günlüğü</p>
+  <h1 class="ph-title">Gereksinim Toplama<br>ve Paydaş Analizi</h1>
+  <div class="ph-meta">
+    <div class="ph-meta-item"><strong>Muhammed Aziz Kılıç</strong>Öğrenci / Geliştirici</div>
+    <div class="ph-meta-item"><strong>Unity 3D + C#</strong>Teknoloji</div>
+    <div class="ph-meta-item"><strong>2025-2026 Bahar</strong>Dönem</div>
+    <div class="ph-meta-item" style="margin-top:.1rem;"><span class="status-pill">Tamamlandı</span></div>
+  </div>
+  <div class="ph-week-badge">W02</div>
+</header>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- GENEL ÖZET -->
+  <div class="section">
+    <p class="section-label">Genel Özet</p>
+    <p>Bu haftada sistemin tüm paydaşları tanımlandı, fonksiyonel ve fonksiyonel olmayan gereksinimler SMART kriterlerine uygun biçimde belgelendi. Problem ifadesi netleştirildi ve üç temel iş akışı süreci modellendi.</p>
+    <div class="info-box" style="border-left-color:var(--accent2);">
+      <p class="ib-label" style="color:var(--accent2)">Problem İfadesi</p>
+      <p>Casual oyuncular, mevcut engel koşusu oyunlarının yalnızca abonelik veya uygulama içi satın alma yoluyla erişilebilir olması nedeniyle ücretsiz ve teknik olarak öğretilebilir bir 3D oyun deneyiminden mahrum kalmaktadır; bu durum hem oyun zevkini hem de eğitimsel erişilebilirliği olumsuz etkilemektedir.</p>
+    </div>
+  </div>
+
+  <!-- BU HAFTA YAPILANLAR -->
+  <div class="section">
+    <p class="section-label">Bu Hafta Yapılanlar</p>
+    <div class="tasks">
+      <div class="task done"><span class="chk"></span>Paydaş analiz tablosu tamamlandı — 5 paydaş tanımlandı ve belgelendi</div>
+      <div class="task done"><span class="chk"></span>Birincil kullanıcı profili oluşturuldu (yaş, yetkinlik, kullanım ortamı, motivasyon)</div>
+      <div class="task done"><span class="chk"></span>8 adet fonksiyonel gereksinim (FR-01–FR-08) belgelendi</div>
+      <div class="task done"><span class="chk"></span>6 adet fonksiyonel olmayan gereksinim (NFR-01–NFR-06) belgelendi</div>
+      <div class="task done"><span class="chk"></span>4 SMART hedef yazıldı ve haftalara atandı</div>
+      <div class="task done"><span class="chk"></span>Problem ifadesi ve mevcut durum analizi yapıldı</div>
+      <div class="task done"><span class="chk"></span>3 temel iş akışı süreci tanımlandı ve modellendi</div>
+    </div>
+  </div>
+
+  <!-- PAYDAŞ ANALİZİ -->
+  <div class="section">
+    <p class="section-label">Paydaş Analizi</p>
+    <table class="stakeholder-table">
+      <thead>
+        <tr>
+          <th>Paydaş</th>
+          <th>Rol</th>
+          <th>Temel Beklenti</th>
+          <th>Etki</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:var(--text)">Oyuncu (Casual)</strong></td>
+          <td>Son Kullanıcı</td>
+          <td>Eğlenceli, akıcı ve zorlu oyun deneyimi</td>
+          <td><span class="impact high">Yüksek</span></td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--text)">Öğrenci / Geliştirici</strong></td>
+          <td>Proje Sahibi</td>
+          <td>Unity ve C# becerilerini pratikte uygulamak</td>
+          <td><span class="impact high">Yüksek</span></td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--text)">Öğretim Üyesi</strong></td>
+          <td>Değerlendirici</td>
+          <td>Yazılım geliştirme sürecinin eksiksiz uygulanması</td>
+          <td><span class="impact high">Yüksek</span></td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--text)">Beta Test Oyuncuları</strong></td>
+          <td>Test Kullanıcısı</td>
+          <td>Hatasız çalışan, anlaşılır kontroller</td>
+          <td><span class="impact mid">Orta</span></td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--text)">Gelecekteki Geliştiriciler</strong></td>
+          <td>Referans Kullanıcı</td>
+          <td>Açık ve öğretilebilir kaynak kod yapısı</td>
+          <td><span class="impact low">Düşük</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FONKSİYONEL GEREKSİNİMLER -->
+  <div class="section">
+    <p class="section-label">Fonksiyonel Gereksinimler</p>
+    <table class="req-table">
+      <thead>
+        <tr>
+          <th>Kod</th>
+          <th>Gereksinim Açıklaması</th>
+          <th>Öncelik</th>
+          <th>Kaynak</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="req-code">FR-01</span></td>
+          <td>Sistem, oyuncunun klavye (WASD/ok tuşları) girişiyle topu ileri/geri/sağ/sol yönlendirebilmesini sağlamalıdır.</td>
+          <td><span class="priority high">Yüksek</span></td>
+          <td>Oyuncu</td>
+        </tr>
+        <tr>
+          <td><span class="req-code">FR-02</span></td>
+          <td>Sistem, top ile kırmızı engel kutusunun çarpışmasını tespit ederek oyuncunun canını azaltmalı ve karakteri yeniden başlatma noktasına getirmelidir.</td>
+          <td><span class="priority high">Yüksek</span></td>
+          <td>Oyuncu</td>
+        </tr>
+        <tr>
+          <td><span class="req-code">FR-03</span></td>
+          <td>Sistem, renkli toplanabilir objelerin (sarı/mavi toplar) üzerinden geçildiğinde bunları sahneden kaldırmalı ve oyuncunun skorunu güncellemelidir.</td>
+          <td><span class="priority high">Yüksek</span></td>
+          <td>Oyuncu</td>
+        </tr>
+        <tr>
+          <td><span class="req-code">FR-04</span></td>
+          <td>Sistem, kamerayı oyuncu topunun arkasında sabit mesafe ve açıyla takip etmeli; ani yön değişimlerinde gecikmesiz uyum sağlamalıdır.</td>
+          <td><span class="priority high">Yüksek</span></td>
+          <td>Geliştirici</td>
+        </tr>
+        <tr>
+          <td><span class="req-code">FR-05</span></td>
+          <td>Sistem, oyuncu bitiş kapısına (goal frame) girdiğinde kazanma ekranı göstermeli ve toplam skoru görüntülemelidir.</td>
+          <td><span class="priority high">Yüksek</span></td>
+          <td>Oyuncu</td>
+        </tr>
+        <tr>
+          <td><span class="req-code">FR-06</span></td>
+          <td>Sistem, oyun başında ve her ölümde oyuncuya kalan can sayısını HUD üzerinde göstermelidir.</td>
+          <td><span class="priority mid">Orta</span></td>
+          <td>Oyuncu</td>
+        </tr>
+        <tr>
+          <td><span class="req-code">FR-07</span></td>
+          <td>Sistem, oyuncunun oyunu istediği zaman duraklatmasına (pause) ve ana menüye dönmesine imkân tanımalıdır.</td>
+          <td><span class="priority mid">Orta</span></td>
+          <td>Oyuncu</td>
+        </tr>
+        <tr>
+          <td><span class="req-code">FR-08</span></td>
+          <td>Sistem, her seviye başında ve bitişinde kısa bir animasyonlu geçiş efekti (fade-in/out) sağlamalıdır.</td>
+          <td><span class="priority low">Düşük</span></td>
+          <td>Geliştirici</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FONKSİYONEL OLMAYAN GEREKSİNİMLER -->
+  <div class="section">
+    <p class="section-label">Fonksiyonel Olmayan Gereksinimler</p>
+    <div class="nfr-grid">
+      <div class="nfr-card">
+        <div class="nfr-top">
+          <span class="nfr-code">NFR-01</span>
+          <span class="nfr-category">Performans</span>
+        </div>
+        <p class="nfr-desc">Oyun sahnesi 60 FPS akıcılıkla çalışmalıdır.</p>
+        <div class="nfr-metric">Min. 60 FPS; sahne yükleme &lt; 3 saniye</div>
+      </div>
+      <div class="nfr-card">
+        <div class="nfr-top">
+          <span class="nfr-code">NFR-02</span>
+          <span class="nfr-category">Güvenlik</span>
+        </div>
+        <p class="nfr-desc">Oyun verileri yerel dışında harici sunucuya gönderilmemelidir.</p>
+        <div class="nfr-metric">Skor ve oyun durumu yalnızca yerel makinede; internet gerekmez</div>
+      </div>
+      <div class="nfr-card">
+        <div class="nfr-top">
+          <span class="nfr-code">NFR-03</span>
+          <span class="nfr-category">Kullanılabilirlik</span>
+        </div>
+        <p class="nfr-desc">Kullanıcı, 5 dakika içinde temel kontrolleri öğrenebilmelidir.</p>
+        <div class="nfr-metric">Kullanıcı testinde %80'i ilk oynayışta kontrolleri sezgisel bulmalıdır</div>
+      </div>
+      <div class="nfr-card">
+        <div class="nfr-top">
+          <span class="nfr-code">NFR-04</span>
+          <span class="nfr-category">Güvenilirlik</span>
+        </div>
+        <p class="nfr-desc">Oyun, normal oturum süresince (30 dk) çökmemelidir.</p>
+        <div class="nfr-metric">Oyun boyunca hata/crash oranı &lt; %1</div>
+      </div>
+      <div class="nfr-card">
+        <div class="nfr-top">
+          <span class="nfr-code">NFR-05</span>
+          <span class="nfr-category">Ölçeklenebilirlik</span>
+        </div>
+        <p class="nfr-desc">Yeni seviyeler eklenebilir modüler yapı sağlanmalıdır.</p>
+        <div class="nfr-metric">Yeni bölüm eklemek için mevcut sahneler değiştirilmeden yeni sahne dosyası oluşturulabilmeli</div>
+      </div>
+      <div class="nfr-card">
+        <div class="nfr-top">
+          <span class="nfr-code">NFR-06</span>
+          <span class="nfr-category">Erişilebilirlik</span>
+        </div>
+        <p class="nfr-desc">Renk körü dostu palet ve yeterli kontrast oranı kullanılmalıdır.</p>
+        <div class="nfr-metric">WCAG 2.1 AA kontrast oranı; kritik UI elementleri için ek ikon/şekil desteği</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- İŞ AKIŞI SÜREÇLERİ -->
+  <div class="section">
+    <p class="section-label">İş Akışı ve Süreç Modeli</p>
+    <div class="process-list">
+      <div class="process-item">
+        <div class="process-no">01</div>
+        <div class="process-title">Oyun Başlatma ve Sahne Yükleme</div>
+        <div class="process-steps">
+          <div class="process-step"><span class="step-no">1.</span>Oyuncu uygulamayı başlatır → Ana Menü açılır → "Oyuna Başla" butonuna basar → Oyun sahnesi yüklenir.</div>
+          <div class="process-step"><span class="step-no">2.</span>Sahne yüklendikten sonra oyuncu topu ve tüm engeller/toplanabilirler sahneye yerleştirilir; kamera başlangıç konumuna ayarlanır.</div>
+          <div class="process-step"><span class="step-no">3.</span>Yükleme tamamlanınca 3–2–1 geri sayım gösterilir ve oyun döngüsü başlar.</div>
+        </div>
+      </div>
+      <div class="process-item">
+        <div class="process-no">02</div>
+        <div class="process-title">Oyun Döngüsü — Hareket, Çarpışma ve Skor Güncelleme</div>
+        <div class="process-steps">
+          <div class="process-step"><span class="step-no">1.</span>Her frame'de oyuncunun klavye girişi okunur → Physics sistemi topa kuvvet uygular → Top hareket eder.</div>
+          <div class="process-step"><span class="step-no">2.</span>Unity Collider bileşenleri sürekli çarpışmaları kontrol eder: kırmızı kutuya değmesi can kaybettirir; renkli topa değmesi skoru artırır.</div>
+          <div class="process-step"><span class="step-no">3.</span>HUD anlık skor ve can durumunu günceller; toplanabilir obje sahneden kaldırılır.</div>
+        </div>
+      </div>
+      <div class="process-item">
+        <div class="process-no">03</div>
+        <div class="process-title">Oyun Sonu — Kazanma/Kaybetme Ekranı ve Yeniden Başlatma</div>
+        <div class="process-steps">
+          <div class="process-step"><span class="step-no">1.</span>Oyuncu bitiş kapısına girdiğinde Kazanma Ekranı açılır ve toplam skor gösterilir; 0 can kalırsa Kaybetme Ekranı açılır.</div>
+          <div class="process-step"><span class="step-no">2.</span>Oyuncu "Tekrar Oyna" butonuna basarsa sahne sıfırlanır.</div>
+          <div class="process-step"><span class="step-no">3.</span>"Ana Menü" butonuna basılırsa Ana Menü sahnesi yüklenir.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KULLANICI PROFİLİ -->
+  <div class="section">
+    <p class="section-label">Birincil Kullanıcı Profili</p>
+    <div class="info-box">
+      <p class="ib-label">Yaş / Demografik</p>
+      <p>10–35 yaş, eğlence amaçlı casual oyun oynayan her demografiden kullanıcı</p>
+    </div>
+    <div class="info-box">
+      <p class="ib-label">Teknik Yetkinlik</p>
+      <p>Temel düzey; oyun kontrollerine hızla uyum sağlayabilen, önceki oyun deneyimi gerekmeyen kullanıcılar</p>
+    </div>
+    <div class="info-box">
+      <p class="ib-label">Kullanım Sıklığı ve Ortamı</p>
+      <p>Günlük veya haftalık, kısa süreli oturumlar (5–15 dakika); masaüstü bilgisayar ortamı</p>
+    </div>
+    <div class="info-box">
+      <p class="ib-label">Pain Points (Yaşanan Zorluklar)</p>
+      <p>Fazla karmaşık kontrol şeması, tutarsız FPS, yeterli geri bildirim (ses/titreşim) eksikliği</p>
+    </div>
+  </div>
+
+  <!-- ETİKETLER -->
+  <div class="tags section">
+    <span class="tag hi">Gereksinim Analizi</span>
+    <span class="tag hi">Paydaş Analizi</span>
+    <span class="tag hi">SMART Hedefler</span>
+    <span class="tag hi">Fonksiyonel Gereksinim</span>
+    <span class="tag hi">Fonksiyonel Olmayan</span>
+    <span class="tag">FR-01..FR-08</span>
+    <span class="tag">NFR-01..NFR-06</span>
+    <span class="tag">İş Akışı</span>
+    <span class="tag">Problem İfadesi</span>
+    <span class="tag">Kullanıcı Profili</span>
+  </div>
+
+</div><!-- /content -->
+
+<!-- PAGINATION -->
+<div class="pagination">
+  <a href="hafta-1.html" class="page-link prev">← Önceki Hafta</a>
+  <span style="font-family:'Space Mono',monospace;font-size:.6rem;color:var(--muted);">2 / 2</span>
+  <span class="page-link disabled">Sonraki Hafta →</span>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="fl">
+    <strong>Muhammed Aziz Kılıç</strong>
+    Sistem Analizi ve Tasarımı — Ball Runner · Hafta 2
+  </div>
+  <div class="fr">GITHUB PAGES · 2025-2026 BAHAR</div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver((els) => {
+    els.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('vis'), i * 80);
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.07 });
+  document.querySelectorAll('.section').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
